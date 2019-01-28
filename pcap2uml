@@ -19,7 +19,7 @@
 [[ -z "$1" ]] && exit 1
 PCAP="$1"
 
-cd "$PWD"
+cd "$PWD" || exit 1
 
 [[ ! -e "$PCAP" ]] && exit 1
 
@@ -112,7 +112,7 @@ get_dns()
     | sed "s/$N_S_N/<color #FF0000>**$N_S_N**<\/color>/g"
 }
 
-cat "$INPUT" | while read N T SRC _ DST PROTO SIZE M
+cat "$INPUT" | while read -r _ _ SRC _ DST PROTO SIZE M
 do
 
   # FIXME
@@ -153,9 +153,9 @@ do
 done > "$DATA"
 
 n=1
-awk '{print $1"\n"$2}' $DATA  \
-  | sort -u                   \
-  | sort -t . -k 3,3n -k 4,4n \
+awk '{print $1"\n"$2}' "$DATA" \
+  | sort -u                    \
+  | sort -t . -k 3,3n -k 4,4n  \
   | while read -r IP
   do
     C=$(echo "$COLORS" | head -$n | tail -1 | awk '{print $1}')
@@ -165,7 +165,7 @@ done > "$IPS"
 
 uml_participants()
 {
-while read P IP COLOR
+while read -r P IP COLOR
 do
   P='participant'
   printf "%s \"%s\" %s\n" "$P" "$IP" "$COLOR"
@@ -175,7 +175,7 @@ printf "\n"
 
 uml_sequence()
 {
-cat "$DATA" | while read SRC DST SIZE PROTO M
+while read -r SRC DST SIZE PROTO M
 do
   C=$(get_ip_color "$SRC")
   MSG=$(clean_msg "$M")
@@ -183,7 +183,7 @@ do
   [[ "$PROTO" = 'DNS'  ]] && MSG=$(get_dns  "$MSG")
   [[ "$PROTO" = 'KRB5' ]] && MSG=$(get_krb5 "$MSG")
   printf "%s -[%s]> %s : [%s] %s\n" "$SRC" "$C" "$DST" "$PROTO" "$MSG"
-done
+done < "$DATA"
 }
 
 uml_start()
@@ -193,7 +193,7 @@ printf "@startuml\n\n"
 
 uml_options()
 {
-printf "\ntitle $PCAP\n"
+printf "\ntitle %s\n" "$PCAP"
 printf "\nhide footbox\n"
 }
 

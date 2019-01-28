@@ -1,0 +1,37 @@
+@startuml
+
+
+title ldap-krb5-sign-seal-01.cap
+
+hide footbox
+participant "172.31.1.101" #a4c400
+participant "172.31.1.104" #60a917
+
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] searchRequest 213  ROOT  baseObject
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] searchResEntry 213  ROOT  | searchResDone 213 success  1 result 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [KRB5] TGS-REQ
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [KRB5] TGS-REP
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] bindRequest 215  ROOT  sasl
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] bindResponse 215 success
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+172.31.1.104 -[#60a917]> 172.31.1.101 : [LDAP] SASL GSS-API Integrity 
+172.31.1.101 -[#a4c400]> 172.31.1.104 : [LDAP] SASL GSS-API Integrity 
+
+@enduml
