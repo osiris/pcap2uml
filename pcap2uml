@@ -1,0 +1,211 @@
+#!/bin/bash
+
+# This script comes with ABSOLUTELY NO WARRANTY, use at own risk
+# Copyright (C) 2018 Osiris Alejandro Gomez <osiris@gcoop.coop>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+[[ -z "$1" ]] && exit 1
+PCAP="$1"
+
+cd "$PWD"
+
+[[ ! -e "$PCAP" ]] && exit 1
+
+INPUT=$(mktemp)
+
+# FIXME
+tshark -r "$PCAP"     \
+  | grep -v snapcraft \
+  | grep -v ubuntu    > "$INPUT"
+
+DATA=$(mktemp)
+IPS=$(mktemp)
+UML=$(mktemp)
+
+COLORS=$(cat << EOF
+#a4c400    lime
+#60a917   green
+#008a00 emerald
+#00aba9    teal
+#1ba1e2    cyan
+#0050ef  cobalt
+#6a00ff  indigo
+#aa00ff  violet
+#f472d0    pink
+#d80073 magenta
+#a20025 crimson
+#e51400     red
+#fa6800  orange
+#f0a30a   amber
+#e3c800  yellow
+#825a2c   brown
+#6d8764   olive
+#647687   steel
+#76608a   mauve
+#a0522d  sienna
+EOF
+)
+
+get_ip_color()
+{
+  local C
+  C=$(grep -w "$1" "$IPS" | awk '{print $3}')
+  [[ -z "$C" ]] && C="#000000"
+  echo "$C"
+}
+
+clean_msg()
+{
+  echo "$1" |  tr '():"<>[]' ' ' | sed 's/  / /g'
+}
+
+get_ldap()
+{
+  echo "$1"
+}
+
+get_krb5()
+{
+  local E_P_R
+  E_P_R='KRB5KDC_ERR_PREAUTH_REQUIRED'
+  E_C_R='KRB5KDC_ERR_CLIENT_REVOKED'
+  S_A_D='STATUS_ACCOUNT_DISABLED'
+  E_P_U='KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN'
+
+  echo "$1" \
+    | sed "s/$E_P_R/<color #FF0000>**$E_P_R**<\/color>/g" \
+    | sed "s/$E_C_R/<color #FF0000>**$E_C_R**<\/color>/g" \
+    | sed "s/$S_A_D/<color #FF0000>**$S_A_D**<\/color>/g" \
+    | sed "s/$E_P_U/<color #FF0000>**$E_P_U**<\/color>/g"
+}
+
+get_dns()
+{
+  local E_S_F
+  local N_S_N
+  E_S_F='Server failure'
+  N_S_N='No such name'
+
+  echo "$1" \
+    | sed 's/Standard query response/R/g' \
+    | sed 's/Standard query/Q/g' \
+    | sed 's/ AAAA /\\nAAAA /g' \
+    | sed 's/ A /\\nA /g'       \
+    | sed 's/ NS /\\nNS /g'     \
+    | sed 's/ SOA /\\nSOA /g'   \
+    | sed 's/ SRV /\\nSRV /g'   \
+    | sed 's/ TXT /\\nTXT /g'   \
+    | sed 's/ URI /\\nURI /g'   \
+    | sed "s/$E_S_F/<color #FF0000>**$E_S_F**<\/color>/g" \
+    | sed "s/$N_S_N/<color #FF0000>**$N_S_N**<\/color>/g"
+}
+
+cat "$INPUT" | while read N T SRC _ DST PROTO SIZE M
+do
+
+  # FIXME
+
+  [[ "$PROTO" = '44'          ]] && continue
+  [[ "$PROTO" = '62'          ]] && continue
+  [[ "$PROTO" = 'ARP'         ]] && continue
+  [[ "$PROTO" = 'BJNP'        ]] && continue
+  [[ "$PROTO" = 'BROWSER'     ]] && continue
+  [[ "$PROTO" = 'DB-LSP-DISC' ]] && continue
+  [[ "$PROTO" = 'DHCPv6'      ]] && continue
+  [[ "$PROTO" = 'ICMP'        ]] && continue
+  [[ "$PROTO" = 'ICMPv6'      ]] && continue
+  [[ "$PROTO" = 'IGMPv3'      ]] && continue
+  [[ "$PROTO" = 'IPX'         ]] && continue
+  [[ "$PROTO" = 'LLC'         ]] && continue
+  [[ "$PROTO" = 'LLDP'        ]] && continue
+  [[ "$PROTO" = 'LLMNR'       ]] && continue
+  [[ "$PROTO" = 'MDNS'        ]] && continue
+  [[ "$PROTO" = 'NBIPX'       ]] && continue
+  [[ "$PROTO" = 'NBNS'        ]] && continue
+  [[ "$PROTO" = 'NTP'         ]] && continue
+  [[ "$PROTO" = 'SIP'         ]] && continue
+  [[ "$PROTO" = 'SMB'         ]] && continue
+  [[ "$PROTO" = 'SNMP'        ]] && continue
+  [[ "$PROTO" = 'SSDP'        ]] && continue
+  [[ "$PROTO" = 'SSH'         ]] && continue
+  [[ "$PROTO" = 'SSL'         ]] && continue
+  [[ "$PROTO" = 'SSLv2'       ]] && continue
+  [[ "$PROTO" = 'STP'         ]] && continue
+  [[ "$PROTO" = 'TCP'         ]] && continue
+  [[ "$PROTO" = 'TLSv1'       ]] && continue
+  [[ "$PROTO" = 'TLSv1.2'     ]] && continue
+  [[ "$PROTO" = 'UDP'         ]] && continue
+
+  printf "%15s %15s %5s %s %s\n" "$SRC" "$DST" "$SIZE" "$PROTO" "$M"
+
+done > "$DATA"
+
+n=1
+awk '{print $1"\n"$2}' $DATA  \
+  | sort -u                   \
+  | sort -t . -k 3,3n -k 4,4n \
+  | while read -r IP
+  do
+    C=$(echo "$COLORS" | head -$n | tail -1 | awk '{print $1}')
+    printf "%s %-15s %s\n" "$n" "$IP" "$C"
+    n=$((n+1))
+done > "$IPS"
+
+uml_participants()
+{
+while read P IP COLOR
+do
+  P='participant'
+  printf "%s \"%s\" %s\n" "$P" "$IP" "$COLOR"
+done < "$IPS"
+printf "\n"
+}
+
+uml_sequence()
+{
+cat "$DATA" | while read SRC DST SIZE PROTO M
+do
+  C=$(get_ip_color "$SRC")
+  MSG=$(clean_msg "$M")
+  [[ "$PROTO" = 'LDAP' ]] && MSG=$(get_ldap "$MSG")
+  [[ "$PROTO" = 'DNS'  ]] && MSG=$(get_dns  "$MSG")
+  [[ "$PROTO" = 'KRB5' ]] && MSG=$(get_krb5 "$MSG")
+  printf "%s -[%s]> %s : [%s] %s\n" "$SRC" "$C" "$DST" "$PROTO" "$MSG"
+done
+}
+
+uml_start()
+{
+printf "@startuml\n\n"
+}
+
+uml_options()
+{
+printf "\ntitle $PCAP\n"
+printf "\nhide footbox\n"
+}
+
+uml_end()
+{
+printf "\n@enduml\n"
+}
+
+uml_start         >  "$UML"
+uml_options       >> "$UML"
+uml_participants  >> "$UML"
+uml_sequence      >> "$UML"
+uml_end           >> "$UML"
+
+cat "$UML"
